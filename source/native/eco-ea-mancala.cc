@@ -26,9 +26,10 @@ int main()
             }
         }
 
-        player = !player;
-
-        game.ChooseCell(choice);
+        if (!game.ChooseCell(choice)) {
+            player = !player;
+        }
+        
         game.PrintBoard();
 
     }
