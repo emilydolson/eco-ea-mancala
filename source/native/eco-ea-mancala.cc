@@ -1,7 +1,7 @@
 // This is the main function for the NATIVE version of this project.
 
 #include <iostream>
-#include "mancala.h"
+#include "../mancala.h"
 
 int main()
 {

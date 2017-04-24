@@ -3,7 +3,7 @@
 //  Released under the MIT Software license; see doc/LICENSE
 
 #include "web/web.h"
-#include "../native/mancala.h"
+#include "../mancala.h"
 #include "geometry/Circle2D.h"
 
 namespace UI = emp::web;
@@ -50,7 +50,7 @@ public:
         }
 
         if (over) {
-            canvas.CenterText(width/2, 10, "Game over! Player " + emp::to_string(game.GetWinner()) + " wins. Click to restart.", "white");    
+            canvas.CenterText(width/2, 10, "Game over! Player " + emp::to_string(game.GetWinner()) + " wins. Click to restart.", "white");
         } else {
             canvas.CenterText(width/2, 10, "Player " + emp::to_string(player) + "'s turn", "white");
         }
