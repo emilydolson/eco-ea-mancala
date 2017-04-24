@@ -18,7 +18,7 @@ int main()
                 std::cin >> choice;
             }
         } else {
-            std::cout << "Player 2, please choose a cell from 8-13" << std::endl;
+            std::cout << "Player 0, please choose a cell from 8-13" << std::endl;
             std::cin >> choice;
             while (choice < 8) {
                 std::cout << "Invalid number. Please try again" << std::endl;
@@ -29,8 +29,10 @@ int main()
         if (!game.ChooseCell(choice)) {
             player = !player;
         }
-        
+
         game.PrintBoard();
 
     }
+
+
 }

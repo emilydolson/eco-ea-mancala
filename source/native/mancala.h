@@ -21,6 +21,9 @@ public:
         board[7] = 0;
     }
 
+    int operator[](int i){
+        return board[i];
+    }
 
     // Returns bool indicating whether player can go again
     bool ChooseCell(int cell) {
@@ -97,5 +100,20 @@ public:
         }
         std::cout << std::endl;
 
+    }
+
+    int GetWinner() {
+        int player0 = board[0];
+        int player1 = board[7];
+
+        for (int i = 1; i < 7; i++) {
+            player1 += board[i];
+        }
+
+        for (int i = 8; i < 14; i++) {
+            player0 += board[i];
+        }
+
+        return (int)(player1 > player0);
     }
 };
