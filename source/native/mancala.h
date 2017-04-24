@@ -103,8 +103,8 @@ public:
     }
 
     int GetWinner() {
-        int player0 = board[0];
-        int player1 = board[7];
+        int player1 = board[0];
+        int player0 = board[7];
 
         for (int i = 1; i < 7; i++) {
             player1 += board[i];

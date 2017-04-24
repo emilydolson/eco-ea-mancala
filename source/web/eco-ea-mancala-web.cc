@@ -19,6 +19,7 @@ private:
     int player = 0;
     double width;
     double height;
+    bool over = false;
 
 public:
     Interface(double width, double height) : doc("emp_base"),
@@ -47,21 +48,37 @@ public:
             canvas.Draw(holes[i], "white");
             canvas.CenterText(holes[i].GetCenterX(), holes[i].GetCenterY(), emp::to_string(game[i]), "black");
         }
-        canvas.CenterText(width/2, 10, "Player " + emp::to_string(player) + "'s turn", "white");
+
+        if (over) {
+            canvas.CenterText(width/2, 10, "Game over! Player " + emp::to_string(game.GetWinner()) + " wins. Click to restart.", "white");    
+        } else {
+            canvas.CenterText(width/2, 10, "Player " + emp::to_string(player) + "'s turn", "white");
+        }
     }
 
-    void MouseClick(UI::MouseEvent & event){
-      int x = event.clientX - canvas.GetXPos();
-      int y = event.clientY - canvas.GetYPos();
+    void MouseClick(UI::MouseEvent & event) {
 
-      for (int i = 0; i < (int)holes.size(); i++) {
-        if(holes[i].Contains(x, y)) {
-            if ((player && i > 7) || (!player && i > 0 && i < 7)) {
-                if (!game.ChooseCell(i)) {
-                    player = !player;
+        if (over) {
+            game.Reset();
+            over = false;
+            return;
+        }
+
+        int x = event.clientX - canvas.GetXPos();
+        int y = event.clientY - canvas.GetYPos();
+
+        for (int i = 0; i < (int)holes.size(); i++) {
+            if(holes[i].Contains(x, y)) {
+                if ((player && i > 7) || (!player && i > 0 && i < 7)) {
+                    if (!game.ChooseCell(i)) {
+                        player = !player;
+                    }
                 }
             }
-        }
+      }
+
+      if (game.IsOver()) {
+          over = true;
       }
   }
 
