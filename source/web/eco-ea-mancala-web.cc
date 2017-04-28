@@ -5,10 +5,15 @@
 #include "web/web.h"
 #include "../mancala.h"
 #include "geometry/Circle2D.h"
+#include "../../handcoded_AI/Mancala/mancala/AI-Trivial.hh"
 
 namespace UI = emp::web;
 
-
+class Player {
+public:
+    bool human = true;
+    std::function<int(emp::array<int, 14> board, int player)> GetMove;
+};
 
 class Interface : public UI::Animate {
 private:
@@ -19,7 +24,7 @@ private:
     int player = 0;
     double width;
     double height;
-    bool over = false;
+    emp::array<Player, 2> players;
 
 public:
     Interface(double width, double height) : doc("emp_base"),
@@ -39,6 +44,9 @@ public:
 
         canvas.On("click", [this](UI::MouseEvent event){ MouseClick(event);});
 
+        players[0].human = false;
+        players[0].GetMove = TrivialMove;
+
         Start();
     }
 
@@ -49,7 +57,7 @@ public:
             canvas.CenterText(holes[i].GetCenterX(), holes[i].GetCenterY(), emp::to_string(game[i]), "black");
         }
 
-        if (over) {
+        if (game.IsOver()) {
             canvas.CenterText(width/2, 10, "Game over! Player " + emp::to_string(game.GetWinner()) + " wins. Click to restart.", "white");
         } else {
             canvas.CenterText(width/2, 10, "Player " + emp::to_string(player) + "'s turn", "white");
@@ -58,9 +66,8 @@ public:
 
     void MouseClick(UI::MouseEvent & event) {
 
-        if (over) {
+        if (game.IsOver()) {
             game.Reset();
-            over = false;
             return;
         }
 
@@ -77,9 +84,12 @@ public:
             }
       }
 
-      if (game.IsOver()) {
-          over = true;
+      while (!players[player].human && !game.IsOver()) {
+          if (!game.ChooseCell(players[player].GetMove(game.GetBoard(), player))) {
+              player = !player;
+          }
       }
+
   }
 
 };

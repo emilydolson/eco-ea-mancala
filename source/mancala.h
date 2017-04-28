@@ -6,6 +6,7 @@ class Mancala {
 private:
     //Should end cells be their own members? For now lets say no.
     emp::array<int, 14> board;
+    bool over = false;
 
 public:
 
@@ -19,10 +20,15 @@ public:
         }
         board[0] = 0;
         board[7] = 0;
+        over = false;
     }
 
     int operator[](int i){
         return board[i];
+    }
+
+    emp::array<int, 14> GetBoard() {
+        return board;
     }
 
     // Returns bool indicating whether player can go again
@@ -47,6 +53,7 @@ public:
 
         // Go again if you ended in your store
         if (curr_cell == 0 || curr_cell == 7) {
+            UpdateIsOver();
             return true;
         }
 
@@ -65,10 +72,29 @@ public:
 
         }
 
+        UpdateIsOver();
+        return false;
+    }
+
+    bool IsMoveValid(int move, int player) {
+
+        if (move > 13 || move < 0 || !board[move]) {
+            return false;
+        }
+        if (!player && move < 7 && move > 0) {
+            return true;
+        }
+        if (player && move > 7) {
+            return true;
+        }
         return false;
     }
 
     bool IsOver() {
+        return over;
+    }
+
+    void UpdateIsOver() {
         bool side_1_empty = true;
         bool side_2_empty = true;
 
@@ -84,7 +110,7 @@ public:
             }
         }
 
-        return side_1_empty || side_2_empty;
+        over = side_1_empty || side_2_empty;
     }
 
     void PrintBoard() {
@@ -107,13 +133,32 @@ public:
         int player0 = board[7];
 
         for (int i = 1; i < 7; i++) {
-            player1 += board[i];
-        }
-
-        for (int i = 8; i < 14; i++) {
             player0 += board[i];
         }
 
+        for (int i = 8; i < 14; i++) {
+            player1 += board[i];
+        }
+
         return (int)(player1 > player0);
+    }
+
+    int ScoreDiff(int player) {
+        int player1 = board[0];
+        int player0 = board[7];
+
+        for (int i = 1; i < 7; i++) {
+            player0 += board[i];
+        }
+
+        for (int i = 8; i < 14; i++) {
+            player1 += board[i];
+        }
+
+        if (player) {
+            return player1 - player0;
+        } else {
+            return player0 - player1;
+        }
     }
 };

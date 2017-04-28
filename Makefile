@@ -23,7 +23,12 @@ CFLAGS_web_debug := $(CFLAGS_all) $(OFLAGS_web_debug) $(OFLAGS_web_all)
 default: $(PROJECT)
 native: $(PROJECT)
 web: $(PROJECT).js
-all: $(PROJECT) $(PROJECT).js
+all: $(PROJECT) $(PROJECT).js evolve-mancala 
+
+evolve-mancala:	
+	clang++ -I../Empirical -c source/evolve-mancala.cc -o evolve-mancala.o -std=c++1y
+	clang++ evolve-mancala.o -L/usr/local/lib/ -lpush -std=c++1y -o evolve-mancala
+#	$(CXX_nat) $(CFLAGS_nat)   push-3.1.0/src/RNG.h push-3.1.0/src/Code.o push-3.1.0/src/CodeUtils.o push-3.1.0/src/Env.o  push-3.1.0/src/StaticInit.o  push-3.1.0/src/BooleanInstructions.o   push-3.1.0/src/CodeInstructions.o  push-3.1.0/src/CodeOps.o   push-3.1.0/src/CompiledCode.o   push-3.1.0/src/EnvInstructions.o source/evolve-mancala.cc -o evolve-mancala
 
 debug:	CFLAGS_nat := $(CFLAGS_nat_debug)
 debug:	$(PROJECT)
