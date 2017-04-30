@@ -1,3 +1,9 @@
+#ifndef MANCALA_H
+#define MANCALA_H
+
+#include <iostream>
+#include <fstream>
+
 #include "base/array.h"
 #include "base/assert.h"
 #include "tools/math.h"
@@ -7,11 +13,32 @@ private:
     //Should end cells be their own members? For now lets say no.
     emp::array<int, 14> board;
     bool over = false;
-
+    bool record = false;
+    std::ofstream record_file;
+    int record_player = 0;
 public:
+
+    int curr_player = 0;
+
+    void SetRecord(bool r, int player = 0, std::string filename = "mancala_record.csv") {
+        record = r;
+        record_player = player;
+        if (record) {
+            record_file.open(filename);
+            if (!record_file.good()) {
+              std::cout << "Invalid output file. Exiting." << std::endl;
+              exit(0);  // @CAO: We should run this through a proper error-processing system...
+            }
+            record_file << "0,1,2,3,4,5,6,7,8,9,10,11,12,13,move" << std::endl;
+        }
+    }
 
     Mancala() {
         Reset();
+    }
+
+    ~Mancala() {
+        record_file.close();
     }
 
     void Reset() {
@@ -21,21 +48,50 @@ public:
         board[0] = 0;
         board[7] = 0;
         over = false;
+        curr_player = 0;
     }
 
-    int operator[](int i){
+    int operator[](int i) const {
         return board[i];
     }
 
-    emp::array<int, 14> GetBoard() {
+    emp::array<int, 14>& GetBoard() {
         return board;
+    }
+
+    void UpdateIsOver() {
+        bool side_1_empty = true;
+        bool side_2_empty = true;
+
+        for (int i = 1; i < 7; i++) {
+            if (board[i] > 0) {
+                side_1_empty = false;
+            }
+        }
+
+        for (int i = 8; i < 14; i++) {
+            if (board[i] > 0) {
+                side_2_empty = false;
+            }
+        }
+
+        over = ( (!curr_player && side_1_empty) || (curr_player && side_2_empty));
     }
 
     // Returns bool indicating whether player can go again
     bool ChooseCell(int cell) {
         emp_assert(cell != 0 && cell != 7); //You can't choose the end cells
+        emp_assert((cell < 7 && !curr_player) || (cell > 7 && curr_player));
         int count = board[cell];
         int curr_cell = cell;
+
+        if (record && curr_player == record_player) {
+            for (int i = 0; i < 14; i++) {
+                record_file << board[i] << ",";
+            }
+            record_file << cell << std::endl;
+        }
+
         board[cell] = 0;
 
         while (count > 0) {
@@ -72,46 +128,29 @@ public:
 
         }
 
+        curr_player = (int)!curr_player;
         UpdateIsOver();
         return false;
     }
 
-    bool IsMoveValid(int move, int player) {
+    bool IsMoveValid(int move) const {
 
         if (move > 13 || move < 0 || !board[move]) {
             return false;
         }
-        if (!player && move < 7 && move > 0) {
+        if (!curr_player && move < 7 && move > 0) {
             return true;
         }
-        if (player && move > 7) {
+        if (curr_player && move > 7) {
             return true;
         }
         return false;
     }
 
-    bool IsOver() {
+    bool IsOver() const {
         return over;
     }
 
-    void UpdateIsOver() {
-        bool side_1_empty = true;
-        bool side_2_empty = true;
-
-        for (int i = 1; i < 7; i++) {
-            if (board[i] > 0) {
-                side_1_empty = false;
-            }
-        }
-
-        for (int i = 8; i < 14; i++) {
-            if (board[i] > 0) {
-                side_2_empty = false;
-            }
-        }
-
-        over = side_1_empty || side_2_empty;
-    }
 
     void PrintBoard() {
         std::cout << "  ";
@@ -143,7 +182,20 @@ public:
         return (int)(player1 > player0);
     }
 
-    int ScoreDiff(int player) {
+    int GetCurrPlayer() const {
+        return curr_player;
+    }
+
+    bool IsTurnA() const {
+        return curr_player == 0;
+    }
+
+    bool IsTurnB() const {
+        return curr_player == 1;
+    }
+
+
+    int ScoreDiff(int player) const {
         int player1 = board[0];
         int player0 = board[7];
 
@@ -161,4 +213,42 @@ public:
             return player0 - player1;
         }
     }
+
+    void Forfeit() {
+        if (curr_player) {
+            for (int i = 0; i < 14; i++) {
+                if (i != 0 && i != 7) {
+                    board[7] += board[i];
+                    board[i] = 0;
+                }
+            }
+        } else {
+            for (int i = 0; i < 14; i++) {
+                if (i != 0 && i != 7) {
+                    board[0] += board[i];
+                    board[i] = 0;
+                }
+            }
+        }
+
+        over = true;
+    }
+
 };
+
+bool IsMoveValid(int move, emp::array<int, 14> board, int curr_player) {
+
+    if (move > 13 || move < 0 || !board[move]) {
+        return false;
+    }
+    if (!curr_player && move < 7 && move > 0) {
+        return true;
+    }
+    if (curr_player && move > 7) {
+        return true;
+    }
+    return false;
+}
+
+
+#endif
