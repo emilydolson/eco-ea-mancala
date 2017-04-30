@@ -13,16 +13,24 @@
 #include "../push-3.1.0/src/Instruction.h"
 #include "../push-3.1.0/src/Literal.h"
 
+#include "config/ArgManager.h"
 #include "../handcoded_AI/Mancala/mancala/AI-Trivial.hh"
 // #include "../handcoded_AI/mancala/mancala/contest/AI-Thelen.hh"
 #include "play_mancala.h"
 #include "MancalaResource.h"
 
-int POP_SIZE = 100;
-int TRIALS = 3;
+EMP_BUILD_CONFIG( EcoEaConfig,
+  GROUP(DEFAULT, "Default settings for NK model"),
+  VALUE(TRIALS, uint32_t, 10, "Level of epistasis in the NK model"),
+  VALUE(SEED, int, 0, "Random number seed (0 for based on time)"),
+  VALUE(POP_SIZE, uint32_t, 100, "Number of organisms in the popoulation."),
+  VALUE(MAX_GENS, uint32_t, 2000, "How many generations should we process?"),
+  VALUE(SELECTION_TYPE, std::string, "eco", "What type of selection? eco, tournament, or lexicase")
+)
+
 
 template <typename WORLD>
-void init(WORLD & world, const push::Env& env) {
+void init(WORLD & world, const push::Env& env, int POP_SIZE) {
     static push::Env workEnv(1000);
     static push::Code rnd = push::parse("CODE.RAND");
 
@@ -62,22 +70,36 @@ std::string print_code(push::Code code, push::Env& env) {
 
 
 int main(int argc, char* argv[] ) {
+    EcoEaConfig config;
+
+    config.Read("EcoEAPush.cfg");
+
+    auto args = emp::cl::ArgManager(argc, argv);
+    if (args.ProcessConfigOptions(config, std::cout, "EcoEAPush.cfg", "EcoEAPush-macros.h") == false) {
+      exit(0);
+    }
+    if (args.TestUnknown() == false) exit(0);  // If there are leftover args, throw an error.
+
+    const uint32_t POP_SIZE = config.POP_SIZE();
+    const uint32_t MAX_GENS = config.MAX_GENS();
+    const uint32_t TRIALS = config.TRIALS();
+
     push::init_push();
-    std::string config_file = argc<2?"test.config":argv[1];
-    std::ifstream config( config_file.c_str() );
-    emp::Random random;
-    emp::evo::World<push::Code> world(random);
+    std::string config_file = "test.config";
+    std::ifstream push_config( config_file.c_str() );
+    emp::Random random(config.SEED());
+    emp::evo::World<push::Code, emp::evo::DefaultStats> world(random);
     world.fitM.Resize(POP_SIZE);
     Mancala game;
     push::Env env;
 
-    env.configure(push::parse(config));
+    env.configure(push::parse(push_config));
 
     push::Env workEnv;
 
-    std::cout << "about to initialize" << std::endl;
-    init(world, env.next());
-    std::cout << "Initialize" << std::endl;
+    // std::cout << "about to initialize" << std::endl;
+    init(world, env.next(), POP_SIZE);
+    // std::cout << "Initialize" << std::endl;
 
     workEnv = env.next();
 
@@ -85,7 +107,7 @@ int main(int argc, char* argv[] ) {
     MancalaResource CaptureResource("capture_testcases.csv", &random, workEnv);
     MancalaResource ELDResource("ELD_mancala_records.csv", &random, workEnv);
 
-    std::function<double(push::Code*)> fitness_func = [&game, &workEnv](push::Code * genome) {
+    std::function<double(push::Code*)> fitness_func = [TRIALS, &game, &workEnv](push::Code * genome) {
         int sum = 0;
         game.Reset();
         // std::cout << "In fit fun" << std::endl;
@@ -114,10 +136,22 @@ int main(int argc, char* argv[] ) {
         return sum/TRIALS;
     };
 
+    // For EcoSelect
     emp::vector<std::function<double(push::Code*)> > extra_funs(3);
     extra_funs[0] = [&ExtraMoveResource](push::Code* org){return ExtraMoveResource.Fitness(org);};
     extra_funs[1] = [&CaptureResource](push::Code* org){return CaptureResource.Fitness(org);};
     extra_funs[2] = [&ELDResource](push::Code* org){return ELDResource.Fitness(org);};
+
+    // For tournament select
+    emp::vector<std::function<double(push::Code *)> > no_extra_funs(0);
+
+    // For Lexicase select
+    emp::vector<std::function<double(push::Code *)> > all_fit_funs(4);
+    all_fit_funs[0] = fitness_func;
+    all_fit_funs[1] = [&ExtraMoveResource](push::Code* org){return ExtraMoveResource.Fitness(org);};
+    all_fit_funs[2] = [&CaptureResource](push::Code* org){return CaptureResource.Fitness(org);};
+    all_fit_funs[3] = [&ELDResource](push::Code* org){return ELDResource.Fitness(org);};
+
 
     push::CodeBase& swapcode = *push::parse("CODE.SWAP");
 
@@ -150,9 +184,17 @@ int main(int argc, char* argv[] ) {
     workEnv = env.next();
 
     std::cout << "Starting loop" << std::endl;
-    for (int ud = 0; ud < 500; ud++) {
-        world.EcoSelect(fitness_func, extra_funs, 10000.0, 5, POP_SIZE);
-        // world.TournamentSelect(fitness_func, 5, POP_SIZE);
+    for (int ud = 0; ud < MAX_GENS; ud++) {
+        if (config.SELECTION_TYPE() == "eco") {
+            world.EcoSelect(fitness_func, extra_funs, 10000.0, 5, POP_SIZE);
+        } else if (config.SELECTION_TYPE() == "tournament") {
+            world.EcoSelect(fitness_func,  no_extra_funs, 10000.0, 5, POP_SIZE);
+        } else if (config.SELECTION_TYPE() == "lexicase") {
+            world.LexicaseSelect(all_fit_funs, POP_SIZE);
+        } else {
+            std::cout << "Invalid selection type " << config.SELECTION_TYPE() << std::endl;
+            exit(1);
+        }
         // std::cout << "Average fitness: "  << std::endl;
         world.Update();
         // world.MutatePop();
