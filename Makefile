@@ -26,8 +26,9 @@ web: $(PROJECT).js
 all: $(PROJECT) $(PROJECT).js evolve-mancala 
 
 evolve-mancala:	
-	$(CXX_nat) -I../Empirical -c source/evolve-mancala.cc -o evolve-mancala.o -std=c++1y
-	$(CXX_nat) evolve-mancala.o -L/mnt/home/dolsonem/.local/lib/lib -lpush -std=c++1y -o evolve-mancala
+	$(CXX_nat) -I../Empirical -c source/evolve-mancala.cc -o evolve-mancala.o -std=c++1y -O3 -DNDEBUG
+	$(CXX_nat) evolve-mancala.o -L/mnt/home/dolsonem/.local/lib/lib -lpush -std=c++1y -o evolve-mancala -O3 -DNDEBUG
+
 #	$(CXX_nat) $(CFLAGS_nat)   push-3.1.0/src/RNG.h push-3.1.0/src/Code.o push-3.1.0/src/CodeUtils.o push-3.1.0/src/Env.o  push-3.1.0/src/StaticInit.o  push-3.1.0/src/BooleanInstructions.o   push-3.1.0/src/CodeInstructions.o  push-3.1.0/src/CodeOps.o   push-3.1.0/src/CompiledCode.o   push-3.1.0/src/EnvInstructions.o source/evolve-mancala.cc -o evolve-mancala
 
 debug:	CFLAGS_nat := $(CFLAGS_nat_debug)
@@ -46,7 +47,7 @@ $(PROJECT).js: source/web/$(PROJECT)-web.cc
 	$(CXX_web) $(CFLAGS_web) source/web/$(PROJECT)-web.cc -o web/$(PROJECT).js
 
 clean:
-	rm -f $(PROJECT) web/$(PROJECT).js *.js.map *~ source/*.o
+	rm -f $(PROJECT) web/$(PROJECT).js *.js.map *~ source/*.o evolve-mancala evolve-mancala.o
 
 # Debugging information
 print-%: ; @echo '$(subst ','\'',$*=$($*))'

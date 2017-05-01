@@ -14,7 +14,7 @@ library_names='libpush.0.0.0 libpush.0 libpush'
 old_library='libpush.a'
 
 # Libraries that this one depends upon.
-dependency_libs=''
+dependency_libs=' /opt/software/GCC/6.2/lib64/../lib64/libstdc++.la'
 
 # Version information for libpush.
 current=0
