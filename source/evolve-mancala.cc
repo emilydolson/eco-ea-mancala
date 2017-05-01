@@ -121,18 +121,18 @@ int main(int argc, char* argv[] ) {
             while (!game.IsOver()) {
                 if (game.GetCurrPlayer()) {
 
-                    if (t%2 == 0) {
-                        emp::array<int, 14> flipped = game.GetFlippedBoard();
-                        int choice = PlayMancala(&test, flipped, 0, workEnv);
-                        if (choice == -1) {
-                            game.ChooseCell(TrivialMove(game.GetBoard(), game.GetCurrPlayer()));
-                        } else {
-                            emp_assert(game.IsMoveValid(game.GetCounterpart(choice)), game.GetCounterpart(choice), choice);
-                            game.ChooseCell(game.GetCounterpart(choice));
-                        }
-                    } else {
+                    // if (t%2 == 0) {
+                    //     emp::array<int, 14> flipped = game.GetFlippedBoard();
+                    //     int choice = PlayMancala(&test, flipped, 0, workEnv);
+                    //     if (choice == -1) {
+                    //         game.ChooseCell(TrivialMove(game.GetBoard(), game.GetCurrPlayer()));
+                    //     } else {
+                    //         emp_assert(game.IsMoveValid(game.GetCounterpart(choice)), game.GetCounterpart(choice), choice);
+                    //         game.ChooseCell(game.GetCounterpart(choice));
+                    //     }
+                    // } else {
                         game.ChooseCell(TrivialMove(game.GetBoard(), game.GetCurrPlayer()));
-                    }
+                    // }
 
                     // game.ChooseCell(thelen::ThelenMove(game, game.GetCurrPlayer()));
                 } else {
