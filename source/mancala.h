@@ -59,6 +59,43 @@ public:
         return board;
     }
 
+    emp::array<int, 14> GetFlippedBoard() {
+        emp::array<int, 14> flipped;
+        flipped[7] = board[0];
+        flipped[8] = board[1];
+        flipped[9] = board[2];
+        flipped[10] = board[3];
+        flipped[11] = board[4];
+        flipped[12] = board[5];
+        flipped[13] = board[6];
+
+        flipped[0] = board[7];
+        flipped[1] = board[8];
+        flipped[2] = board[9];
+        flipped[3] = board[10];
+        flipped[4] = board[11];
+        flipped[5] = board[12];
+        flipped[6] = board[13];
+        return flipped;
+    }
+
+    int GetOpposite(int choice) {
+        int opposite = abs(7 - emp::Mod(choice, 7));
+        if (choice < 7) {
+            opposite += 7;
+        }
+        return opposite;
+    }
+
+    int GetCounterpart(int choice) {
+        if (choice < 7) {
+            choice += 7;
+        } else {
+            choice -= 7;
+        }
+        return choice;
+    }
+
     void UpdateIsOver() {
         bool side_1_empty = true;
         bool side_2_empty = true;

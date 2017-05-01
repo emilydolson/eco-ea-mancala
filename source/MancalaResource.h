@@ -65,7 +65,7 @@ public:
             correct += (int)(choice == test_cases[test_case].second);
         }
 
-        return correct / trials;
+        return correct;
     }
 
 };

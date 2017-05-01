@@ -24,6 +24,7 @@ EMP_BUILD_CONFIG( EcoEaConfig,
   VALUE(TRIALS, uint32_t, 10, "Level of epistasis in the NK model"),
   VALUE(SEED, int, 0, "Random number seed (0 for based on time)"),
   VALUE(POP_SIZE, uint32_t, 100, "Number of organisms in the popoulation."),
+  VALUE(TOURNAMENT_SIZE, uint32_t, 5, "Number of organisms in the popoulation."),
   VALUE(MAX_GENS, uint32_t, 2000, "How many generations should we process?"),
   VALUE(SELECTION_TYPE, std::string, "eco", "What type of selection? eco, tournament, or lexicase")
 )
@@ -83,38 +84,56 @@ int main(int argc, char* argv[] ) {
     const uint32_t POP_SIZE = config.POP_SIZE();
     const uint32_t MAX_GENS = config.MAX_GENS();
     const uint32_t TRIALS = config.TRIALS();
+    const uint32_t TOURNAMENT_SIZE = config.TOURNAMENT_SIZE();
 
     push::init_push();
-    std::string config_file = "test.config";
-    std::ifstream push_config( config_file.c_str() );
+    // std::string config_file = "test.config";
+    // std::ifstream push_config( config_file.c_str() );
     emp::Random random(config.SEED());
     emp::evo::World<push::Code, emp::evo::DefaultStats> world(random);
     world.fitM.Resize(POP_SIZE);
     Mancala game;
     push::Env env;
 
-    env.configure(push::parse(push_config));
+    // env.configure(push::parse(push_config));
+    env = env.next();
+    push::Code test = push::parse("( CODE.FROMFLOAT ( EXEC.STACKDEPTH 6 ( CODE.POSITION FLOAT.= CODE.DO  ) ( NAME.QUOTE  )  ) ( () EXEC.STACKDEPTH CODE.CONS ( ( CODE.EXTRACT EXEC.POP ( _3:(NAME.QUOTE _3) () () _1:TRUE ( ( ( CODE.CONS CODE.NTHCDR  ) ENV.RANDOM-SEED ( ( INTEGER.FROMBOOLEAN  ) CODE.NTH  )  ) ( ( INTEGER./ NAME.STACKDEPTH  ) 0  ) ( CODE.QUOTE ( EXEC.ROT BOOLEAN.POP : FLOAT.MAX  )  ) NAME.DUP ( EXEC.DEFINE  ) BOOLEAN.SWAP  )  )  ) ( EXEC.YANK  ) ENV.MAX-RANDOM-FLOAT  )  ) ( CODE.DEFINE CODE.POP  )  )");
 
-    push::Env workEnv;
+    push::Env workEnv(env);
+
+    // std::cout << "Loaded: " << print_code(test, env.next()) << std::endl;
 
     // std::cout << "about to initialize" << std::endl;
-    init(world, env.next(), POP_SIZE);
+    init(world, env, POP_SIZE);
     // std::cout << "Initialize" << std::endl;
 
-    workEnv = env.next();
+    // workEnv = env;
 
     MancalaResource ExtraMoveResource("extra_move_testcases.csv", &random, workEnv);
     MancalaResource CaptureResource("capture_testcases.csv", &random, workEnv);
     MancalaResource ELDResource("ELD_mancala_records.csv", &random, workEnv);
 
-    std::function<double(push::Code*)> fitness_func = [TRIALS, &game, &workEnv](push::Code * genome) {
+    std::function<double(push::Code*)> fitness_func = [TRIALS, &game, &workEnv, &test](push::Code * genome) {
         int sum = 0;
-        game.Reset();
         // std::cout << "In fit fun" << std::endl;
         for (int t = 0; t < TRIALS; t++) {
+            game.Reset();
             while (!game.IsOver()) {
                 if (game.GetCurrPlayer()) {
-                    game.ChooseCell(TrivialMove(game.GetBoard(), game.GetCurrPlayer()));
+
+                    if (t%2 == 0) {
+                        emp::array<int, 14> flipped = game.GetFlippedBoard();
+                        int choice = PlayMancala(&test, flipped, 0, workEnv);
+                        if (choice == -1) {
+                            game.ChooseCell(TrivialMove(game.GetBoard(), game.GetCurrPlayer()));
+                        } else {
+                            emp_assert(game.IsMoveValid(game.GetCounterpart(choice)), game.GetCounterpart(choice), choice);
+                            game.ChooseCell(game.GetCounterpart(choice));
+                        }
+                    } else {
+                        game.ChooseCell(TrivialMove(game.GetBoard(), game.GetCurrPlayer()));
+                    }
+
                     // game.ChooseCell(thelen::ThelenMove(game, game.GetCurrPlayer()));
                 } else {
                     // std::cout << "Player 0 turn" << std::endl;
@@ -142,6 +161,9 @@ int main(int argc, char* argv[] ) {
     extra_funs[1] = [&CaptureResource](push::Code* org){return CaptureResource.Fitness(org);};
     extra_funs[2] = [&ELDResource](push::Code* org){return ELDResource.Fitness(org);};
 
+    // std::cout << "Fitness of test: " << fitness_func(&test) << std::endl;
+    // return 0;
+
     // For tournament select
     emp::vector<std::function<double(push::Code *)> > no_extra_funs(0);
 
@@ -155,12 +177,12 @@ int main(int argc, char* argv[] ) {
 
     push::CodeBase& swapcode = *push::parse("CODE.SWAP");
 
-    std::function<bool(push::Code*, emp::Random&)> mut_func = [&workEnv, &env, &swapcode](push::Code* genome, emp::Random & r) {
-        workEnv = env.next();
+    std::function<bool(push::Code*, emp::Random&)> mut_func = [&env, &swapcode](push::Code* genome, emp::Random & r) {
+        push::Env workEnv(env);
         workEnv.clear_stacks();
         push::push(workEnv, *genome);
 
-        if (r.P(0.5)) { // should be a parameter
+        if (r.P(0.05)) { // should be a parameter
           if (r.P(0.5)) {
               push::subtree_mutation(workEnv);
           } else {
@@ -186,9 +208,9 @@ int main(int argc, char* argv[] ) {
     std::cout << "Starting loop" << std::endl;
     for (int ud = 0; ud < MAX_GENS; ud++) {
         if (config.SELECTION_TYPE() == "eco") {
-            world.EcoSelect(fitness_func, extra_funs, 10000.0, 5, POP_SIZE);
+            world.EcoSelect(fitness_func, extra_funs, 100.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "tournament") {
-            world.EcoSelect(fitness_func,  no_extra_funs, 10000.0, 5, POP_SIZE);
+            world.EcoSelect(fitness_func,  no_extra_funs, 100.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase") {
             world.LexicaseSelect(all_fit_funs, POP_SIZE);
         } else {
@@ -202,12 +224,14 @@ int main(int argc, char* argv[] ) {
 
     double sum_fitness = 0;
     double max_fitness = 0;
+    push::Code fittest;
     for (auto org : world) {
         double fitness = fitness_func(org);
         // std::cout << "Fitness: " << fitness << /*" Code: " << print_code(*org, env.next()) <<*/std::endl;
         sum_fitness += fitness;
         if (fitness > max_fitness) {
             max_fitness = fitness;
+            fittest = *org;
         }
         // static push::Env env(1000);
         // int sum = 0;
@@ -252,7 +276,8 @@ int main(int argc, char* argv[] ) {
 
     }
     std::cout << "Average fitness: " << sum_fitness/POP_SIZE << " Max fitness: " << max_fitness << std::endl;
-
+    workEnv = env;
+    std::cout << print_code(fittest, workEnv) << std::endl;
 
 
 }

@@ -11,7 +11,8 @@
 #include "mancala.h"
 
 int PlayMancala(push::Code * genome, emp::array<int, 14> & board, int player, push::Env & workEnv) {
-    push::Env env = workEnv;
+    static push::Env env(1000);
+    env = workEnv;
     env.clear_stacks();
 
     for (int count : board) {
@@ -26,9 +27,9 @@ int PlayMancala(push::Code * genome, emp::array<int, 14> & board, int player, pu
         choice = push::pop<int>(env);
     }
     // std::cout << "Validating move" << std::endl;
-    // while (!IsMoveValid(choice, board, player) && push::has_elements<int>(env,1)) {
-    //     choice = push::pop<int>(env);
-    // }
+    while (!IsMoveValid(choice, board, player) && push::has_elements<int>(env,1)) {
+        choice = push::pop<int>(env);
+    }
 
     if (!IsMoveValid(choice, board, player)) {
         choice = -1;
