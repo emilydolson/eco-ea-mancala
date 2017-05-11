@@ -39,6 +39,9 @@ debug-web:	$(PROJECT).js
 
 web-debug:	debug-web
 
+harmful_resources:	source/native/harmful_resources.cc
+	$(CXX_nat) $(CFLAGS_nat_debug) source/native/harmful_resources.cc -o harmful_resources
+
 $(PROJECT):	source/native/$(PROJECT).cc
 	$(CXX_nat) $(CFLAGS_nat) source/native/$(PROJECT).cc -o $(PROJECT)
 	@echo To build the web version use: make web
@@ -47,7 +50,7 @@ $(PROJECT).js: source/web/$(PROJECT)-web.cc
 	$(CXX_web) $(CFLAGS_web) source/web/$(PROJECT)-web.cc -o web/$(PROJECT).js
 
 clean:
-	rm -f $(PROJECT) web/$(PROJECT).js *.js.map *~ source/*.o evolve-mancala evolve-mancala.o
+	rm -f $(PROJECT) web/$(PROJECT).js *.js.map *~ source/*.o evolve-mancala evolve-mancala.o harmful_resources
 
 # Debugging information
 print-%: ; @echo '$(subst ','\'',$*=$($*))'
