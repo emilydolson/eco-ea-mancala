@@ -134,11 +134,11 @@ int main(int argc, char* argv[] ) {
         if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "all") {
             world.EcoSelectGradation(goal_function, all_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "good") {
-            world.EcoSelect(goal_function, good_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function, good_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "bad") {
-            world.EcoSelect(goal_function, bad_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function, bad_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "tournament") {
-            world.EcoSelect(goal_function,  no_extra_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function,  no_extra_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase" && config.SUBTASKS() == "all") {
             world.LexicaseSelect(all_funs_lexicase, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase" && config.SUBTASKS() == "good") {
