@@ -47,7 +47,7 @@ int main(int argc, char* argv[] ) {
 
     emp::Random random(config.SEED());
     emp::evo::World<BitOrg, emp::evo::DefaultStats> world(random);
-    world.fitM.Resize(POP_SIZE);
+    // world.fitM.Resize(POP_SIZE);
 
     // Build a random initial population
     for (uint32_t i = 0; i < POP_SIZE; i++) {
@@ -132,13 +132,13 @@ int main(int argc, char* argv[] ) {
 
     for (uint32_t ud = 0; ud < MAX_GENS; ud++) {
         if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "all") {
-            world.EcoSelect(goal_function, all_funs, 500.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function, all_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "good") {
-            world.EcoSelect(goal_function, good_funs, 500.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelect(goal_function, good_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "bad") {
-            world.EcoSelect(goal_function, bad_funs, 500.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelect(goal_function, bad_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "tournament") {
-            world.EcoSelect(goal_function,  no_extra_funs, 500.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelect(goal_function,  no_extra_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase" && config.SUBTASKS() == "all") {
             world.LexicaseSelect(all_funs_lexicase, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase" && config.SUBTASKS() == "good") {

@@ -97,7 +97,7 @@ int main(int argc, char* argv[] ) {
 
     // env.configure(push::parse(push_config));
     env = env.next();
-    push::Code test = push::parse("( CODE.FROMFLOAT ( EXEC.STACKDEPTH 6 ( CODE.POSITION FLOAT.= CODE.DO  ) ( NAME.QUOTE  )  ) ( () EXEC.STACKDEPTH CODE.CONS ( ( CODE.EXTRACT EXEC.POP ( _3:(NAME.QUOTE _3) () () _1:TRUE ( ( ( CODE.CONS CODE.NTHCDR  ) ENV.RANDOM-SEED ( ( INTEGER.FROMBOOLEAN  ) CODE.NTH  )  ) ( ( INTEGER./ NAME.STACKDEPTH  ) 0  ) ( CODE.QUOTE ( EXEC.ROT BOOLEAN.POP : FLOAT.MAX  )  ) NAME.DUP ( EXEC.DEFINE  ) BOOLEAN.SWAP  )  )  ) ( EXEC.YANK  ) ENV.MAX-RANDOM-FLOAT  )  ) ( CODE.DEFINE CODE.POP  )  )");
+    push::Code test = push::parse("( ( FLOAT.RAND ( ( ( ENV.INSTRUCTIONS  ) INTEGER./ FLOAT.TAN ( FLOAT.<  ) FLOAT.COS  ) ( ( CODE.CONS FLOAT.DEFINE ( ENV.MAX-RANDOM-INTEGER  )  ) FLOAT.FLUSH ( ( EXEC.=  ) TRUE  ) ( FLOAT.FLUSH  ) NAME.YANK NAME.YANKDUP  ) CODE.APPEND  ) NAME.FLUSH ( CODE.POSITION CODE.DO  )  ) () ( ( ( FLOAT.YANKDUP CODE.INSERT ( BOOLEAN.FLUSH FLOAT.MAX  ) ( BOOLEAN.DUP ( ( FLOAT.> ( FLOAT.%  ) ( BOOLEAN.FROMINTEGER  ) ( BOOLEAN.NAND ( EXEC.DO*COUNT :  ) BOOLEAN.DUP  ) ( CODE.FROMINTEGER  )  )  ) ( INTEGER.STACKDEPTH CODE.FROMNAME ENV.MAX-RANDOM-FLOAT  ) CODE.=  )  )  ) ( ( :  ) ( CODE.CONS ( FLOAT.-  )  )  ) EXEC.DO*RANGE  ) CODE.CONS  )");
 
     push::Env workEnv(env);
 
@@ -110,6 +110,13 @@ int main(int argc, char* argv[] ) {
     // workEnv = env;
 
     MancalaResource ExtraMoveResource("extra_move_testcases.csv", &random, workEnv);
+    MancalaResource Pit1ExtraMoveResource("pit1_extramove_testcases.csv", &random, workEnv);
+    MancalaResource Pit2ExtraMoveResource("pit2_extramove_testcases.csv", &random, workEnv);
+    MancalaResource Pit3ExtraMoveResource("pit3_extramove_testcases.csv", &random, workEnv);
+    MancalaResource Pit4ExtraMoveResource("pit4_extramove_testcases.csv", &random, workEnv);
+    MancalaResource Pit5ExtraMoveResource("pit5_extramove_testcases.csv", &random, workEnv);
+    MancalaResource Pit6ExtraMoveResource("pit6_extramove_testcases.csv", &random, workEnv);
+
     MancalaResource CaptureResource("capture_testcases.csv", &random, workEnv);
     MancalaResource ELDResource("ELD_mancala_records.csv", &random, workEnv);
 
@@ -138,7 +145,7 @@ int main(int argc, char* argv[] ) {
                 } else {
                     // std::cout << "Player 0 turn" << std::endl;
                     int choice = PlayMancala(genome, game.GetBoard(), game.GetCurrPlayer(), workEnv);
-                    // std::cout << "Making move " << choice << std::endl;
+                    std::cout << "Making move " << choice << std::endl;
                     if (choice == -1) {
                         // std::cout << "Forfiting " << std::endl;
                         game.Forfeit();
@@ -147,7 +154,7 @@ int main(int argc, char* argv[] ) {
                         game.ChooseCell(choice);
                     }
                 }
-                // game.PrintBoard();
+                game.PrintBoard();
             }
             // std::cout << "Score: " << game.ScoreDiff(0) << std::endl;
             sum += game.ScoreDiff(0)+48;
@@ -156,13 +163,20 @@ int main(int argc, char* argv[] ) {
     };
 
     // For EcoSelect
-    emp::vector<std::function<double(push::Code*)> > extra_funs(3);
+    emp::vector<std::function<double(push::Code*)> > extra_funs(9);
     extra_funs[0] = [&ExtraMoveResource](push::Code* org){return ExtraMoveResource.Fitness(org);};
     extra_funs[1] = [&CaptureResource](push::Code* org){return CaptureResource.Fitness(org);};
     extra_funs[2] = [&ELDResource](push::Code* org){return ELDResource.Fitness(org);};
 
-    // std::cout << "Fitness of test: " << fitness_func(&test) << std::endl;
-    // return 0;
+    extra_funs[3] = [&Pit1ExtraMoveResource](push::Code* org){return Pit1ExtraMoveResource.Fitness(org);};
+    extra_funs[4] = [&Pit2ExtraMoveResource](push::Code* org){return Pit2ExtraMoveResource.Fitness(org);};
+    extra_funs[5] = [&Pit3ExtraMoveResource](push::Code* org){return Pit3ExtraMoveResource.Fitness(org);};
+    extra_funs[6] = [&Pit4ExtraMoveResource](push::Code* org){return Pit4ExtraMoveResource.Fitness(org);};
+    extra_funs[7] = [&Pit5ExtraMoveResource](push::Code* org){return Pit5ExtraMoveResource.Fitness(org);};
+    extra_funs[8] = [&Pit6ExtraMoveResource](push::Code* org){return Pit6ExtraMoveResource.Fitness(org);};
+
+    std::cout << "Fitness of test: " << fitness_func(&test) << std::endl;
+    return 0;
 
     // For tournament select
     emp::vector<std::function<double(push::Code *)> > no_extra_funs(0);
