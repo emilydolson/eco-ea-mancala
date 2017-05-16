@@ -42,6 +42,10 @@ web-debug:	debug-web
 harmful_resources:	source/native/harmful_resources.cc
 	$(CXX_nat) $(CFLAGS_nat_debug) source/native/harmful_resources.cc -o harmful_resources
 
+box_problem:	source/native/box_problem.cc
+	$(CXX_nat) $(CFLAGS_nat_debug) source/native/box_problem.cc -o box_problem
+
+
 $(PROJECT):	source/native/$(PROJECT).cc
 	$(CXX_nat) $(CFLAGS_nat) source/native/$(PROJECT).cc -o $(PROJECT)
 	@echo To build the web version use: make web

@@ -1,5 +1,6 @@
 #include "evo/World.h"
 #include "tools/BitSet.h"
+#include "base/array.h"
 
 #include <functional>
 #include <fstream>
@@ -18,7 +19,7 @@ EMP_BUILD_CONFIG( EcoEaConfig,
   VALUE(TRIALS, uint32_t, 10, "Level of epistasis in the NK model"),
   VALUE(SEED, int, 0, "Random number seed (0 for based on time)"),
   VALUE(MUT_RATE, double, .001, "Per site"),
-  VALUE(ORG_SIZE, uint32_t, 32, "Number of bits in org"),
+  VALUE(ORG_SIZE, uint32_t, 2, "Number of dimensions in org"),
   VALUE(POP_SIZE, uint32_t, 1000, "Number of organisms in the popoulation."),
   VALUE(TOURNAMENT_SIZE, uint32_t, 5, "Number of organisms in the popoulation."),
   VALUE(MAX_GENS, uint32_t, 2000, "How many generations should we process?"),
@@ -26,7 +27,7 @@ EMP_BUILD_CONFIG( EcoEaConfig,
   VALUE(SUBTASKS, std::string, "all", "Which subtasks are rewarded? all, bad, or good")
 )
 
-using BitOrg = emp::BitVector;
+using Org = emp::array<double, 2>;
 
 int main(int argc, char* argv[] ) {
     EcoEaConfig config;
@@ -46,85 +47,67 @@ int main(int argc, char* argv[] ) {
     const uint32_t TOURNAMENT_SIZE = config.TOURNAMENT_SIZE();
 
     emp::Random random(config.SEED());
-    emp::evo::World<BitOrg, emp::evo::DefaultStats> world(random);
+    emp::evo::World<Org, emp::evo::DefaultStats> world(random);
     // world.fitM.Resize(POP_SIZE);
 
     // Build a random initial population
     for (uint32_t i = 0; i < POP_SIZE; i++) {
-      BitOrg next_org(ORG_SIZE);
-      for (uint32_t j = 0; j < ORG_SIZE; j++) next_org[j] = random.P(0.5);
+      Org next_org;
+      for (uint32_t j = 0; j < 2; j++) next_org[j] = random.GetDouble(0, 1);
       world.Insert(next_org);
     }
 
-    std::function<double(BitOrg*)> goal_function = [ORG_SIZE](BitOrg * org){
-        double fitness = 0;
-        bool hit_end = false;
-
-        for (uint32_t i = 0; i < ORG_SIZE; i++) {
-            if ((*org)[i]) {
-                fitness++;
-            } else {
-                if ((i >= ORG_SIZE - 3) ||
-                                !((*org)[i+1] && !(*org)[i+2] && (*org)[i+3])) {
-                    fitness = 0;
-                }
-                hit_end = true;
-                break;
-            }
-        }
-
-        if (!hit_end) {
-            fitness = 0;
-        }
-        // std::cout << *org << " Fitness: " << fitness << std::endl;
-
+    std::function<double(Org*)> goal_function = [ORG_SIZE](Org * org){
+        double fitness = (int)(sqrt(emp::Pow(1 - (*org)[0], 2.0) + emp::Pow(1 - (*org)[1], 2.0)) < .01);
+        // std::cout << emp::to_string(*org) << " " << emp::Pow2(1 - (*org)[0]) + emp::Pow2(1 - (*org)[1]) << " " << fitness << std::endl;
         return fitness;
     };
 
-    std::function<double(BitOrg*)> good_hint = [ORG_SIZE](BitOrg * org){
-        return org->CountOnes()/ORG_SIZE;
+    std::function<double(Org*)> good_hint = [](Org * org){
+        return 1 - std::abs((*org)[0] - (*org)[1]);
     };
 
-    std::function<double(BitOrg*)> bad_hint = [ORG_SIZE](BitOrg * org){
-        return (ORG_SIZE - org->CountOnes())/ORG_SIZE;
+    std::function<double(Org*)> bad_hint = [ORG_SIZE](Org * org){
+        return 1 - (*org)[0];
     };
 
-    emp::vector<std::function<double(BitOrg*)> > all_funs_lexicase(3);
+    emp::vector<std::function<double(Org*)> > all_funs_lexicase(3);
     all_funs_lexicase[0] = goal_function;
     all_funs_lexicase[1] = good_hint;
     all_funs_lexicase[2] = bad_hint;
 
-    emp::vector<std::function<double(BitOrg*)> > good_funs_lexicase(2);
+    emp::vector<std::function<double(Org*)> > good_funs_lexicase(2);
     good_funs_lexicase[0] = goal_function;
     good_funs_lexicase[1] = good_hint;
 
-    emp::vector<std::function<double(BitOrg*)> > bad_funs_lexicase(2);
+    emp::vector<std::function<double(Org*)> > bad_funs_lexicase(2);
     bad_funs_lexicase[0] = goal_function;
     bad_funs_lexicase[1] = bad_hint;
 
-    emp::vector<std::function<double(BitOrg*)> > all_funs(2);
+    emp::vector<std::function<double(Org*)> > all_funs(2);
     all_funs[0] = good_hint;
     all_funs[1] = bad_hint;
 
-    emp::vector<std::function<double(BitOrg*)> > good_funs(1);
+    emp::vector<std::function<double(Org*)> > good_funs(1);
     good_funs[0] = good_hint;
 
-    emp::vector<std::function<double(BitOrg*)> > bad_funs(1);
+    emp::vector<std::function<double(Org*)> > bad_funs(1);
     bad_funs[0] = bad_hint;
 
     // For tournament select
-    emp::vector<std::function<double(BitOrg *)> > no_extra_funs(0);
+    emp::vector<std::function<double(Org *)> > no_extra_funs(0);
 
-    std::function<bool(BitOrg *, emp::Random&)> mut_func = [ORG_SIZE, MUT_RATE](BitOrg * org, emp::Random& random) {
-        bool mutated = false;
+    std::function<bool(Org *, emp::Random&)> mut_func = [ORG_SIZE, MUT_RATE](Org * org, emp::Random& random) {
 
         for (uint32_t i = 0; i < ORG_SIZE; i++) {
-            if (random.P(MUT_RATE)){
-                (*org)[i] = (int)!(*org)[i];
-                mutated = true;
+            (*org)[i] += random.GetRandNormal(0, MUT_RATE);
+            if ((*org)[i] < 0) {
+                (*org)[i] = 0;
+            } else if ((*org)[i] > 1) {
+                (*org)[i] = 1;
             }
         }
-        return mutated;
+        return true;
     };
 
     world.SetDefaultMutateFun(mut_func);
@@ -132,13 +115,13 @@ int main(int argc, char* argv[] ) {
 
     for (uint32_t ud = 0; ud < MAX_GENS; ud++) {
         if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "all") {
-            world.EcoSelectGradation(goal_function, all_funs, 2000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function, all_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "good") {
-            world.EcoSelectGradation(goal_function, good_funs, 2000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function, good_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "eco" && config.SUBTASKS() == "bad") {
-            world.EcoSelectGradation(goal_function, bad_funs, 2000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function, bad_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "tournament") {
-            world.EcoSelectGradation(goal_function,  no_extra_funs, 2000.0, TOURNAMENT_SIZE, POP_SIZE);
+            world.EcoSelectGradation(goal_function,  no_extra_funs, 1000.0, TOURNAMENT_SIZE, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase" && config.SUBTASKS() == "all") {
             world.LexicaseSelect(all_funs_lexicase, POP_SIZE);
         } else if (config.SELECTION_TYPE() == "lexicase" && config.SUBTASKS() == "good") {
@@ -149,7 +132,7 @@ int main(int argc, char* argv[] ) {
             std::cout << "Invalid selection type " << config.SELECTION_TYPE() << std::endl;
             exit(1);
         }
-
+        std::cout << emp::to_string(world[0]) << std::endl;
         world.Update();
         world.MutatePop();
     }
