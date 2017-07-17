@@ -7,9 +7,6 @@
 #include "base/array.h"
 #include "base/vector.h"
 #include "tools/string_utils.h"
-#include "tools/Random.h"
-#include "tools/random_utils.h"
-
 
 template <int INPUT_LENGTH>
 class TestcaseSet {
@@ -17,12 +14,11 @@ protected:
     using input_t = emp::array<int, INPUT_LENGTH>;
     using output_t = int;
     emp::vector<std::pair<input_t, output_t> > test_cases;
-    emp::Random * random;
     emp::vector<std::function<output_t(input_t)> > groups;
     emp::vector<emp::vector<int> > correct_choices;
 
 public:
-    TestcaseSet(std::string filename, emp::Random * r) : random(r) {
+    TestcaseSet(std::string filename) {
         GetTestcases(filename);
     }
 
