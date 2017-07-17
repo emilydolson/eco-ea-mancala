@@ -19,7 +19,15 @@ protected:
 
 public:
     TestcaseSet(std::string filename) {
-        GetTestcases(filename);
+        LoadTestcases(filename);
+    }
+
+    emp::vector<std::pair<input_t, output_t> >& GetTestcases() {
+        return test_cases;
+    }
+
+    emp::vector<emp::vector<int> >& GetCorrectChoices() {
+        return correct_choices;
     }
 
     void AddGroup(std::function<output_t(input_t)> func) {
@@ -31,7 +39,7 @@ public:
     }
 
     // Currently assumes
-    void GetTestcases(std::string filename) {
+    void LoadTestcases(std::string filename) {
         std::ifstream infile(filename);
         std::string line;
 
