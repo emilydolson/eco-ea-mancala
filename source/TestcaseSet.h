@@ -42,48 +42,50 @@ public:
     }
 
     emp::vector<size_t> GetValidSubset() {
-        int count = 0;
-        while (count < 1000) {
-            count++;
-            emp::vector<size_t> choices = emp::Choose(*random, test_cases.size(), trials);
+        return emp::Choose(*random, test_cases.size(), trials);
 
-            bool all_valid = true;
-            for (int i = 0; i < groups.size(); i++) {
-                for (int j = 1; j < groups.size(); j++) {
-                    if (i == j) {
-                        continue;
-                    }
-                    bool valid = false;
-                    for (int choice : choices) {
-                        emp::vector<int> result(100);
-                        auto it = std::set_difference(correct_choices[i][choice].begin(),
-                                              correct_choices[i][choice].end(),
-                                              correct_choices[j][choice].begin(),
-                                              correct_choices[j][choice].end(),
-                                              result.begin());
-                        result.resize(it - result.begin());
-                        if (result.size() != 0) {
-                            valid = true;
-                            break;
-                        }
-                    }
-
-                    if (!valid) {
-                        all_valid = false;
-                        break;
-                    }
-                }
-                if (!all_valid) {
-                    break;
-                }
-            }
-
-            if (all_valid) {
-                return choices;
-            }
-        }
-        std::cout << "ERROR: The functions you supplied to TestcaseSet don't seem to be reliably differentiatable." << std::endl;
-        exit(1);
+        // int count = 0;
+        // while (count < 1000) {
+        //     count++;
+        //     emp::vector<size_t> choices = emp::Choose(*random, test_cases.size(), trials);
+        //
+        //     bool all_valid = true;
+        //     for (int i = 0; i < groups.size(); i++) {
+        //         for (int j = 1; j < groups.size(); j++) {
+        //             if (i == j) {
+        //                 continue;
+        //             }
+        //             bool valid = false;
+        //             for (int choice : choices) {
+        //                 emp::vector<int> result(100);
+        //                 auto it = std::set_difference(correct_choices[i][choice].begin(),
+        //                                       correct_choices[i][choice].end(),
+        //                                       correct_choices[j][choice].begin(),
+        //                                       correct_choices[j][choice].end(),
+        //                                       result.begin());
+        //                 result.resize(it - result.begin());
+        //                 if (result.size() != 0) {
+        //                     valid = true;
+        //                     break;
+        //                 }
+        //             }
+        //
+        //             if (!valid) {
+        //                 all_valid = false;
+        //                 break;
+        //             }
+        //         }
+        //         if (!all_valid) {
+        //             break;
+        //         }
+        //     }
+        //
+        //     if (all_valid) {
+        //         return choices;
+        //     }
+        // }
+        // std::cout << "ERROR: The functions you supplied to TestcaseSet don't seem to be reliably differentiatable." << std::endl;
+        // exit(1);
     }
 
     void AddGroup(std::function<output_t(input_t)> func) {
