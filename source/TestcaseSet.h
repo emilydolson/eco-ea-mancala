@@ -22,7 +22,7 @@ protected:
     emp::vector<std::function<output_t(input_t)> > groups;
     emp::vector<emp::vector<output_t> > correct_choices;
     emp::Random * random;
-    int trials  = 1;
+    int trials  = 20;
 
 public:
     TestcaseSet(std::string filename, emp::Random * r) : random(r) {
@@ -33,8 +33,12 @@ public:
         return test_cases;
     }
 
-    emp::vector<emp::vector<int> >& GetCorrectChoices() {
+    emp::vector<emp::vector<output_t> >& GetCorrectChoices() {
         return correct_choices;
+    }
+
+    int GetNFuncs() {
+        return groups.size();
     }
 
     emp::vector<size_t> GetValidSubset() {
