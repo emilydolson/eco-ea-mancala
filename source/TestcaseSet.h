@@ -41,6 +41,19 @@ public:
         return groups.size();
     }
 
+    emp::vector<int> GetBestPossible(emp::vector<size_t> choices) {
+        emp::vector<int> count;
+        for (int i = 0; i < groups.size(); i++) {
+            count.push_back(0);
+            for (size_t choice : choices) {
+                if (correct_choices[i][choice].size()){
+                    count[i]++;
+                }
+            }
+        }
+        return count;
+    }
+
     emp::vector<size_t> GetValidSubset() {
         return emp::Choose(*random, test_cases.size(), trials);
 
